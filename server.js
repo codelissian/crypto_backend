@@ -3,11 +3,13 @@ import nodemailer from 'nodemailer';
 import multer from 'multer';
 import { extname } from 'path';
 import dotenv from 'dotenv';
+import cors from 'cors'; // Import the cors package
+
 const app = express();
 const port = 3000;
 
-
 dotenv.config();
+
 // Set up Nodemailer
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -30,6 +32,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 app.use(express.json());
+app.use(cors()); // Enable CORS for all routes
 
 // Serve static files (images) from the 'uploads' directory
 app.use('/uploads', express.static('uploads'));
@@ -42,7 +45,7 @@ app.post('/uploadImageAndSendEmail', upload.single('image'), (req, res) => {
   const imagePath = req.file.path;
   const originalName = req.file.originalname;
 
-  const { to, subject, text } = req.body; // Receive recipient, subject, and text from the request body
+  const { to, subject, text } = req.body;
 
   const mailOptions = {
     from: 'your_email@gmail.com',
