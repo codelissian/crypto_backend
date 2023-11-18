@@ -3,7 +3,7 @@ import nodemailer from 'nodemailer';
 import multer from 'multer';
 import { extname } from 'path';
 import dotenv from 'dotenv';
-import cors from 'cors'; // Import the cors package
+import cors from 'cors';
 
 const app = express();
 const port = 3000;
@@ -19,7 +19,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Set up Multer for file uploads
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/'); // Save images in the 'uploads' directory
@@ -30,25 +29,42 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage: storage });
-
 app.use(express.json());
-app.use(cors()); // Enable CORS for all routes
-
-// Serve static files (images) from the 'uploads' directory
+app.use(cors());
 app.use('/uploads', express.static('uploads'));
 
-app.post('/uploadImageAndSendEmail', upload.single('image'), (req, res) => {
+
+
+const sendEmail = (mailOptions) => {
+  return new Promise((resolve, reject) => {
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(info);
+      }
+    });
+  });
+};
+
+
+
+
+app.post('/uploadImageAndSendEmail', upload.single('image'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No image provided' });
   }
 
   const imagePath = req.file.path;
   const originalName = req.file.originalname;
-
   const { to, subject, text } = req.body;
 
+  if (!to || !subject || !text) {
+    return res.status(400).json({ error: 'Missing required fields. Please provide "to", "subject", and "text".' });
+  }
+
   const mailOptions = {
-    from: 'your_email@gmail.com',
+    from: process.env.EMAIL_USER,
     to,
     subject,
     text,
@@ -60,16 +76,17 @@ app.post('/uploadImageAndSendEmail', upload.single('image'), (req, res) => {
     ],
   };
 
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log(error);
-      res.status(500).json({ error: 'Email not sent' });
-    } else {
-      console.log('Email sent: ' + info.response);
-      res.json({ message: 'Email sent successfully' });
-    }
-  });
+  try {
+    await sendEmail(mailOptions);
+    console.log('Email sent successfully');
+    res.json({ message: 'Email sent successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Email not sent' });
+  }
 });
+
+
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
