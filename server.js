@@ -4,6 +4,8 @@ import multer from 'multer';
 import { extname } from 'path';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import fs from 'fs';
+
 
 const app = express();
 const port = 3000;
@@ -19,14 +21,23 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // Save images in the 'uploads' directory
+    const uploadDir = 'uploads/';
+    if (!fs.existsSync(uploadDir)) {
+      // Check if the directory exists, if not, create it
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    cb(null, file.fieldname + '-' + Date.now() + extname(file.originalname));
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+    const ext = extname(file.originalname);
+    cb(null, `${uniqueSuffix}${ext}`);
   },
 });
+
 
 const upload = multer({ storage: storage });
 app.use(express.json());
