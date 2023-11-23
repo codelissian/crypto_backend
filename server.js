@@ -13,7 +13,7 @@ const port = 3000;
 
 dotenv.config();
 
-
+// 
 const transporter = nodemailer.createTransport({
   host: 'smtp.hostinger.com',
   port: 465, 
