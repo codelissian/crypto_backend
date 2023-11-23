@@ -13,14 +13,17 @@ const port = 3000;
 
 dotenv.config();
 
-// Set up Nodemailer
+
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: 'smtp.hostinger.com',
+  port: 465, 
+  secure: true, 
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASSWORD,
   },
 });
+
 
 
 const storage = multer.diskStorage({
